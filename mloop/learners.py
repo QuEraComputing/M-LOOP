@@ -13,6 +13,7 @@ import scipy.optimize as so
 import logging
 import datetime
 import os
+from importlib import import_module
 import mloop.utilities as mlu
 import multiprocessing as mp
 import sklearn.gaussian_process as skg
@@ -21,8 +22,16 @@ import sklearn.preprocessing as skp
 import warnings
 
 from mloop import __version__
-import mloop.neuralnet as mlnn
-#Lazy import of scikit-learn and tensorflow
+
+
+def _load_neuralnet_module():
+    """
+    Import the TensorFlow-backed neural net module only when it is actually needed.
+
+    This keeps non-neural-net controllers usable in environments that don't
+    install TensorFlow.
+    """
+    return import_module("mloop.neuralnet")
 
 learner_thread_count = 0
 default_learner_archive_filename = 'learner_archive'
@@ -2740,8 +2749,9 @@ class NeuralNetLearner(MachineLearner, mp.Process):
         self.log = None
 
     def _construct_net(self):
+        neuralnet = _load_neuralnet_module()
         self.neural_net = [
-            mlnn.NeuralNet(
+            neuralnet.NeuralNet(
                 num_params=self.num_params,
                 fit_hyperparameters=self.update_hyperparameters,
                 learner_archive_dir=self.learner_archive_dir,
